@@ -31,10 +31,11 @@
       <div class="nav-links">
         <a href="#environment">Environment</a>
         <a href="#anatomy">Harness</a>
+        <a href="#agent-deep">Agent</a>
         <a href="#loop">Loop</a>
         <a href="#planning">Planning</a>
         <a href="#tools">Tools</a>
-        <a href="#blueprint">Build it</a>
+        <a href="#agent-build">Build it</a>
       </div>
     </nav>
     <div class="hero wrap" id="top">
@@ -45,7 +46,7 @@
           <p class="hero-copy">A model proposes the next step. A harness turns it into a controlled cycle of planning, tool use, observation, and verification. Workspaces and sandboxes give that cycle a place to run.</p>
           <div class="hero-actions">
             <a class="button primary" href="#loop">Explore the loop <span aria-hidden="true">↗</span></a>
-            <a class="button secondary" href="#blueprint">See the build blueprint</a>
+            <a class="button secondary" href="#agent-build">See the build blueprint</a>
           </div>
         </div>
         <figure class="hero-visual">
@@ -143,9 +144,159 @@
       <p class="note">These are responsibilities, not eight required services. A small harness can implement them in one process; a production system may split them across components.</p>
     </section>
 
+    <section id="agent-deep" class="section">
+      <div class="section-head">
+        <div class="eyebrow">04 / Agent deep dive</div>
+        <h2>What makes an agent an agent?</h2>
+        <p>An agent is a goal-directed system that can choose at least one next step from what it observes. The model supplies judgment; the harness supplies the loop, tools, state, and limits that turn that judgment into work.</p>
+      </div>
+      <div class="agent-equation" aria-label="Agent is goal plus model plus harness plus tools plus feedback">
+        <span>Goal</span><b>+</b><span>Model</span><b>+</b><span>Harness</span><b>+</b><span>Tools</span><b>+</b><span>Feedback</span><strong>→ Agent behavior</strong>
+      </div>
+      <div class="agent-boundary">
+        <div><span class="mini-label">The defining choice</span><h3>It selects the next action from evidence.</h3><p>After a log query, it may inspect a deployment, ask for clarification, or finish. That choice depends on the result. A fixed sequence of steps is a workflow; agent behavior begins where the next step can adapt.</p></div>
+        <div><span class="mini-label">The control boundary</span><h3>Its autonomy has a scope.</h3><p>The harness decides which tools exist, what they can access, how many turns may run, and which actions need approval. The agent can pursue the goal only inside those boundaries.</p></div>
+      </div>
+
+      <div class="subsection-head"><h3>Agent input, state, and output</h3><p>The event that starts a run is only part of its input. The app also supplies identity, context, and constraints.</p></div>
+      <div class="agent-contract">
+        <article><span class="contract-kicker">Input envelope</span><h4>What enters the run</h4><ul><li>Goal or question and the trigger source</li><li>Authenticated actor, tenant, and permissions</li><li>Relevant records, files, or conversation history</li><li>Tool schemas, budget, deadline, success checks</li></ul></article>
+        <div class="contract-arrow" aria-hidden="true">→</div>
+        <article class="contract-center"><span class="contract-kicker">Working state</span><h4>What evolves inside</h4><ul><li>Plan and current hypothesis</li><li>Model messages and tool observations</li><li>Pending approvals and checkpoints</li><li>Trace, cost, retries, and stop reason</li></ul></article>
+        <div class="contract-arrow" aria-hidden="true">→</div>
+        <article><span class="contract-kicker">Output envelope</span><h4>What leaves the run</h4><ul><li>Answer or structured result</li><li>Evidence and actions actually taken</li><li>Status: complete, waiting, or partial</li><li>Trace ID and remaining uncertainty</li></ul></article>
+      </div>
+      <div class="code-panel agent-envelope"><div class="code-caption">A normalized run contract · illustrative JSON</div><pre><code>{
+  "trigger": "support.ticket.created",
+  "goal": "Draft an answer for order A-1041",
+  "actor": { "customerId": "c-7", "role": "customer" },
+  "limits": { "maxTurns": 6, "deadlineMs": 30000 },
+  "allowedTools": ["lookup_order"]
+}
+→ { "status": "draft", "reply": "...", "evidence": ["order:A-1041"] }</code></pre></div>
+
+      <div class="subsection-head"><h3>What can start a run?</h3><p>The trigger decides when the app creates the input envelope. The agent loop starts after that handoff.</p></div>
+      <div class="trigger-grid">
+        <article><span>01</span><h4>User request</h4><p>A chat message or button asks the agent to research, draft, or act.</p></article>
+        <article><span>02</span><h4>Webhook or event</h4><p>A ticket, commit, order, or alert arrives from another system.</p></article>
+        <article><span>03</span><h4>Schedule</h4><p>A timer starts a recurring report or health review.</p></article>
+        <article><span>04</span><h4>Queue job</h4><p>A worker picks up a durable task after the app accepts it.</p></article>
+        <article><span>05</span><h4>State change</h4><p>A new file, database row, or metric threshold creates work.</p></article>
+        <article><span>06</span><h4>Human resume</h4><p>An approval or clarification restarts a paused run from a checkpoint.</p></article>
+      </div>
+      <div class="agent-cycle" aria-label="How the harness runs an agent loop">
+        <div><span>1</span><strong>Trigger</strong><small>App creates the goal and context</small></div>
+        <div><span>2</span><strong>Decide</strong><small>Model proposes answer or call</small></div>
+        <div><span>3</span><strong>Gate & act</strong><small>Harness validates and executes</small></div>
+        <div><span>4</span><strong>Observe</strong><small>Tool result enters state</small></div>
+        <div><span>5</span><strong>Check</strong><small>Continue, pause, or finish</small></div>
+      </div>
+      <p class="note">Steps 2–5 repeat while the goal remains open and the run stays within its budget. The <a href="#loop">interactive trace</a> shows each decision in detail.</p>
+
+      <div class="subsection-head"><h3>Real-world agent patterns</h3><p>Each example has a different trigger, tool set, output, and boundary.</p></div>
+      <div class="use-case-grid">
+        <article><div class="use-case-icon">01</div><h4>Incident investigator</h4><p><strong>Trigger:</strong> latency alert. <strong>Tools:</strong> metrics, logs, deployments. <strong>Output:</strong> evidence-backed diagnosis and mitigation proposal. <strong>Gate:</strong> production rollback waits for approval.</p></article>
+        <article><div class="use-case-icon">02</div><h4>Order support assistant</h4><p><strong>Trigger:</strong> new customer ticket. <strong>Tools:</strong> authorized order lookup and policy search. <strong>Output:</strong> reply draft. <strong>Gate:</strong> refunds and outbound messages are separate actions.</p></article>
+        <article><div class="use-case-icon">03</div><h4>Coding agent</h4><p><strong>Trigger:</strong> assigned issue or failed CI. <strong>Tools:</strong> repository search, shell, tests, patch. <strong>Output:</strong> code diff and test evidence. <strong>Gate:</strong> writes stay in a sandbox and merge needs review.</p></article>
+        <article><div class="use-case-icon">04</div><h4>Document intake agent</h4><p><strong>Trigger:</strong> uploaded contract or invoice. <strong>Tools:</strong> extraction, database lookup, validation. <strong>Output:</strong> structured fields and exceptions. <strong>Gate:</strong> uncertain or high-value records route to a person.</p></article>
+      </div>
+    </section>
+
+    <section id="agent-build" class="section">
+      <div class="section-head">
+        <div class="eyebrow">05 / Build an agent</div>
+        <h2>From one use case to a working agent</h2>
+        <p>Start with one trigger, one measurable outcome, and one or two read-only tools. Put the model call behind a server-side runner, then add state, approvals, and more tools as the task demands.</p>
+      </div>
+      <div class="agent-architecture">
+        <div class="architecture-caption">Reference architecture · one agent, one bounded run</div>
+        <div class="agent-architecture-flow">
+          <div><span>01 / Ingress</span><strong>Chat · webhook · cron · queue</strong><small>Authenticate and normalize event</small></div>
+          <b aria-hidden="true">→</b>
+          <div><span>02 / Runner</span><strong>Harness + model loop</strong><small>Plan, call tools, enforce limits</small></div>
+          <b aria-hidden="true">⇄</b>
+          <div><span>03 / Capabilities</span><strong>Tools + MCP / APIs</strong><small>Read or act within policy</small></div>
+          <b aria-hidden="true">→</b>
+          <div><span>04 / Result</span><strong>Draft · record · alert</strong><small>Deliver or await approval</small></div>
+        </div>
+        <div class="architecture-support"><span>Under the runner: state store / checkpoints</span><span>Across every step: identity, authorization, tracing, and budgets</span></div>
+      </div>
+      <div class="agent-build-steps">
+        <div><span>1</span><strong>Write the contract</strong><p>Name the trigger, input fields, expected output, stop rule, and side effects.</p></div>
+        <div><span>2</span><strong>Wrap one tool</strong><p>Give it a narrow schema. Enforce identity inside the tool implementation.</p></div>
+        <div><span>3</span><strong>Run and observe</strong><p>Cap turns, capture results, and test empty data, errors, and premature completion.</p></div>
+        <div><span>4</span><strong>Add delivery</strong><p>Return a draft or structured result. Add approvals before writes or messages.</p></div>
+      </div>
+      <div class="subsection-head"><h3>A small server-side example</h3><p>A support agent reads order status and returns a draft. The webhook or app must verify the customer before calling this function.</p></div>
+      <div class="code-grid agent-code-grid">
+        <div class="code-panel large"><div class="code-caption">Install in a separate backend project</div><pre><code>npm install @openai/agents zod
+# Set OPENAI_API_KEY in the server environment</code></pre>
+          <div class="code-caption">agent.mjs · read-only demo data</div><pre><code>import { Agent, run, tool } from '@openai/agents';
+import { z } from 'zod';
+
+const orders = new Map([
+  ['c-7:A-1041', { status: 'shipped', eta: 'Tuesday' }]
+]);
+
+export async function handleTicket(ticket) {
+  const customerId = ticket.verifiedCustomerId;
+  if (!customerId) throw new Error('Unauthenticated');
+
+  const lookupOrder = tool({
+    name: 'lookup_order',
+    description: 'Read the current status of an order',
+    parameters: z.object({ orderId: z.string() }),
+    execute: async ({ orderId }) =>
+      JSON.stringify(
+        orders.get(customerId + ':' + orderId) ??
+        { error: 'Order not found' }
+      )
+  });
+
+  const agent = new Agent({
+    name: 'Order status assistant',
+    instructions: 'Look up current status. Draft a concise reply. Never claim a refund or send a message.',
+    tools: [lookupOrder],
+    modelSettings: { toolChoice: 'required' }
+  });
+
+  const result = await run(agent, ticket.message, {
+    maxTurns: 6,
+    signal: AbortSignal.timeout(30_000)
+  });
+  return { ticketId: ticket.id, status: 'draft',
+           reply: result.finalOutput };
+}</code></pre></div>
+        <aside class="code-explain">
+          <h4>Read the boundaries in the code</h4>
+          <ol>
+            <li><strong>Trigger adapter:</strong> a verified ticket enters <code>handleTicket</code>.</li>
+            <li><strong>Identity:</strong> the tool closes over the authenticated customer ID; the model cannot supply a different one.</li>
+            <li><strong>Tool:</strong> <code>lookup_order</code> is read-only and has a Zod input schema.</li>
+            <li><strong>Harness:</strong> <code>run</code> performs the model/tool loop with a six-turn cap.</li>
+            <li><strong>Output:</strong> the app receives a draft and decides whether to display, review, or send it.</li>
+          </ol>
+          <p>The in-memory map keeps the example small. In production, query an authorized database in the tool, persist run state as needed, and handle retries and approval paths in the application.</p>
+        </aside>
+      </div>
+      <div class="comparison-wrap">
+        <h3>Libraries to consider</h3>
+        <div class="table-scroll"><table class="library-table">
+          <thead><tr><th>Library</th><th>Good starting point for</th><th>What it provides</th><th>You still own</th></tr></thead>
+          <tbody>
+            <tr><td><a href="https://openai.github.io/openai-agents-js/guides/quickstart/" target="_blank" rel="noopener noreferrer">OpenAI Agents SDK ↗</a></td><td>Small tool-using agents</td><td>Agent definition, runner loop, tools, handoffs, tracing</td><td>Trigger adapters, business authorization, data, deployment</td></tr>
+            <tr><td><a href="https://docs.langchain.com/oss/javascript/langgraph/overview" target="_blank" rel="noopener noreferrer">LangGraph ↗</a></td><td>Stateful, long-running flows</td><td>Graph orchestration, persistence, streaming, human-in-the-loop</td><td>Graph design, model and tool wiring, application policy</td></tr>
+            <tr><td><a href="https://code.claude.com/docs/en/agent-sdk/overview" target="_blank" rel="noopener noreferrer">Claude Agent SDK ↗</a></td><td>Agents that inspect and edit code</td><td>Agent loop, built-in workspace tools, context management</td><td>Hosting, permissions, task integration, result review</td></tr>
+          </tbody>
+        </table></div>
+        <p class="note">Choose the smallest library that covers your run shape. A fixed workflow may be simpler when every step is known in advance. Keep API keys and privileged tools on the server.</p>
+      </div>
+      <div class="callout compact"><strong>Deployment boundary:</strong> this guide is a static site. The sample agent belongs in a backend, serverless function, or worker where secrets and tool permissions remain private.</div>
+    </section>
+
     <section id="loop" class="section">
       <div class="section-head">
-        <div class="eyebrow">04 / Interactive trace</div>
+        <div class="eyebrow">06 / Interactive trace</div>
         <h2>Walk the loop, one decision at a time</h2>
         <p>Compare an incident investigation with a coding task. Both follow the same loop, but the coding task uses a workspace, sandbox, and shell.</p>
       </div>
@@ -187,7 +338,7 @@
 
     <section id="planning" class="section">
       <div class="section-head">
-        <div class="eyebrow">05 / Planning & development</div>
+        <div class="eyebrow">07 / Planning & development</div>
         <h2>A plan is working state, not a script</h2>
         <p>The goal tells the agent what success means. A plan selects a route, but each observation can change it. The harness keeps the plan visible and bounded while the model revises it.</p>
       </div>
@@ -222,7 +373,7 @@
 
     <section id="tools" class="section">
       <div class="section-head">
-        <div class="eyebrow">06 / Tool calling</div>
+        <div class="eyebrow">08 / Tool calling</div>
         <h2>A tool call is a request, not an action</h2>
         <p>The model emits a name and arguments. The harness must decide whether that request is valid and allowed before executing it. Results become new context for the next model turn.</p>
       </div>
@@ -273,7 +424,7 @@ tool → { "timeouts": 42, "sample": "..." }</code></pre></div>
 
     <section id="completion" class="section">
       <div class="section-head">
-        <div class="eyebrow">07 / Reaching the goal</div>
+        <div class="eyebrow">09 / Reaching the goal</div>
         <h2>How does the harness know when to stop?</h2>
         <p>It cannot guarantee that the model is correct. It can require observable evidence, check hard limits, and make the outcome explicit.</p>
       </div>
@@ -296,7 +447,7 @@ tool → { "timeouts": 42, "sample": "..." }</code></pre></div>
 
     <section id="blueprint" class="section">
       <div class="section-head">
-        <div class="eyebrow">08 / Build blueprint</div>
+        <div class="eyebrow">10 / Harness blueprint</div>
         <h2>Build the smallest useful harness</h2>
         <p>Start with one goal, a few typed tools, and a loop you can inspect. Add persistence, approvals, and more autonomy only when the task needs them.</p>
       </div>
@@ -354,8 +505,11 @@ tool → { "timeouts": 42, "sample": "..." }</code></pre></div>
         <p>The examples here are simplified teaching models. SDKs differ in exact control flow and policy hooks.</p>
       </div>
       <div class="source-list">
-        <a href="https://openai.github.io/openai-agents-python/running_agents/" target="_blank" rel="noopener noreferrer"><strong>OpenAI Agents SDK · Running agents</strong><span>Runner loop, tool calls, handoffs, and turn limits ↗</span></a>
-        <a href="https://openai.github.io/openai-agents-python/guardrails/" target="_blank" rel="noopener noreferrer"><strong>OpenAI Agents SDK · Guardrails</strong><span>Where checks run around inputs, outputs, and tools ↗</span></a>
+        <a href="https://openai.github.io/openai-agents-js/guides/running-agents/" target="_blank" rel="noopener noreferrer"><strong>OpenAI Agents SDK · Running agents</strong><span>Runner loop, tool calls, handoffs, and turn limits ↗</span></a>
+        <a href="https://openai.github.io/openai-agents-js/guides/quickstart/" target="_blank" rel="noopener noreferrer"><strong>OpenAI Agents SDK · JavaScript quickstart</strong><span>Agent, tool, run, and the code example above ↗</span></a>
+        <a href="https://docs.langchain.com/oss/javascript/langgraph/overview" target="_blank" rel="noopener noreferrer"><strong>LangGraph · Overview</strong><span>Durable state and explicit orchestration graphs ↗</span></a>
+        <a href="https://code.claude.com/docs/en/agent-sdk/overview" target="_blank" rel="noopener noreferrer"><strong>Claude Agent SDK · Overview</strong><span>Agent loop and code-oriented tools ↗</span></a>
+        <a href="https://openai.github.io/openai-agents-js/guides/guardrails/" target="_blank" rel="noopener noreferrer"><strong>OpenAI Agents SDK · Guardrails</strong><span>Where checks run around inputs, outputs, and tools ↗</span></a>
         <a href="https://ts.sdk.modelcontextprotocol.io/v2/clients/calling" target="_blank" rel="noopener noreferrer"><strong>MCP TypeScript SDK · Calling tools</strong><span>Tool discovery and call behavior ↗</span></a>
         <a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener noreferrer"><strong>Anthropic · Building effective agents</strong><span>Practical patterns for agent systems ↗</span></a>
         <a href="https://www.anthropic.com/research/effective-harnesses-for-long-running-agents" target="_blank" rel="noopener noreferrer"><strong>Anthropic · Effective harnesses</strong><span>Checkpoints and incremental progress in long tasks ↗</span></a>

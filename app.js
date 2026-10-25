@@ -267,7 +267,7 @@ document.querySelectorAll('[data-tool-choice]').forEach(button => {
 
 if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   const revealTargets = document.querySelectorAll(
-    '.section-head, .concept-grid .card, .environment-grid .card, .architecture, .trace-layout, .planning-grid, .tool-flow, .outcome-grid, .blueprint-grid'
+    '.section-head, .concept-grid .card, .environment-grid .card, .architecture, .agent-equation, .agent-contract, .trigger-grid article, .use-case-grid article, .agent-architecture, .agent-build-steps, .agent-code-grid, .trace-layout, .planning-grid, .tool-flow, .outcome-grid, .blueprint-grid'
   );
   const revealObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {

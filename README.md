@@ -1,6 +1,8 @@
 # AI Systems — Engineering Field Guide
 
-An interactive field guide for engineers covering execution environments (workspaces, sandboxes, containers, and shells), agent loops, planning, tool calls, harness architecture, goal verification, and a build blueprint. Two interactive traces show an incident investigation and a coding task.
+An interactive field guide for engineers covering execution environments (workspaces, sandboxes, containers, and shells), harnesses, agent inputs and triggers, real-world use cases, agent loops, planning, tool calls, goal verification, and build blueprints. Two interactive traces show an incident investigation and a coding task.
+
+The agent code example is educational and belongs in a separate server-side project. This website does not run a model or store API keys.
 
 ## Local development
 
