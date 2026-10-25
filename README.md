@@ -1,27 +1,27 @@
 # AI Systems — Engineering Field Guide
 
-A visual, interactive technical introduction to AI models, tools, MCP, skills, harnesses, agents, connectors and AI products.
+Updated edition with deeper coverage of:
+
+- Workspaces
+- Sandboxes
+- Containers
+- Shells and CLIs
+- Harnesses, tools, skills, agents and MCP
+- Diagrams showing containment and interactions
 
 ## Local development
 
-Requires Node.js 20 or newer. No third-party dependencies.
-
 ```bash
 npm run dev
-# http://localhost:3000
 ```
 
-## Build and preview
+Open http://localhost:3000
+
+## Build
 
 ```bash
 npm run build
 npm run preview
 ```
 
-Build output: `dist/index.html`.
-
-## Deploy to Vercel
-
-Import `mattkoltun/ai-systems-web` into Vercel. The included `vercel.json` sets `npm run build` and output directory `dist`.
-
-All content, diagrams, styles and agent-loop interactions are implemented in `index.html`. The project is dependency-free.
+The production output is `dist/index.html`.
