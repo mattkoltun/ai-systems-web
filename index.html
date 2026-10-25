@@ -197,7 +197,7 @@
       <div class="use-case-grid">
         <article><div class="use-case-icon">01</div><h4>Incident investigator</h4><p><strong>Trigger:</strong> latency alert. <strong>Tools:</strong> metrics, logs, deployments. <strong>Output:</strong> evidence-backed diagnosis and mitigation proposal. <strong>Gate:</strong> production rollback waits for approval.</p></article>
         <article><div class="use-case-icon">02</div><h4>Order support assistant</h4><p><strong>Trigger:</strong> new customer ticket. <strong>Tools:</strong> authorized order lookup and policy search. <strong>Output:</strong> reply draft. <strong>Gate:</strong> refunds and outbound messages are separate actions.</p></article>
-        <article><div class="use-case-icon">03</div><h4>Coding agent</h4><p><strong>Trigger:</strong> assigned issue or failed CI. <strong>Tools:</strong> repository search, shell, tests, patch. <strong>Output:</strong> code diff and test evidence. <strong>Gate:</strong> writes stay in a sandbox and merge needs review.</p></article>
+        <article><div class="use-case-icon">03</div><h4>Coding agent</h4><p><strong>Trigger:</strong> assigned issue or failed CI. <strong>Tools:</strong> repository search, shell, tests, patch. <strong>Output:</strong> code diff and test evidence. <strong>Gate:</strong> writes stay in a sandbox and merge needs review. Codex SDK is one way to embed this agent.</p></article>
         <article><div class="use-case-icon">04</div><h4>Document intake agent</h4><p><strong>Trigger:</strong> uploaded contract or invoice. <strong>Tools:</strong> extraction, database lookup, validation. <strong>Output:</strong> structured fields and exceptions. <strong>Gate:</strong> uncertain or high-value records route to a person.</p></article>
       </div>
     </section>
@@ -285,11 +285,30 @@ export async function handleTicket(ticket) {
           <thead><tr><th>Library</th><th>Good starting point for</th><th>What it provides</th><th>You still own</th></tr></thead>
           <tbody>
             <tr><td><a href="https://openai.github.io/openai-agents-js/guides/quickstart/" target="_blank" rel="noopener noreferrer">OpenAI Agents SDK ↗</a></td><td>Small tool-using agents</td><td>Agent definition, runner loop, tools, handoffs, tracing</td><td>Trigger adapters, business authorization, data, deployment</td></tr>
+            <tr><td><a href="https://developers.openai.com/codex/codex-sdk" target="_blank" rel="noopener noreferrer">Codex SDK ↗</a></td><td>Repository and CI agents</td><td>Programmatic Codex threads, coding tools, streamed events</td><td>Task triggers, workspace scope, approvals, result review</td></tr>
             <tr><td><a href="https://docs.langchain.com/oss/javascript/langgraph/overview" target="_blank" rel="noopener noreferrer">LangGraph ↗</a></td><td>Stateful, long-running flows</td><td>Graph orchestration, persistence, streaming, human-in-the-loop</td><td>Graph design, model and tool wiring, application policy</td></tr>
             <tr><td><a href="https://code.claude.com/docs/en/agent-sdk/overview" target="_blank" rel="noopener noreferrer">Claude Agent SDK ↗</a></td><td>Agents that inspect and edit code</td><td>Agent loop, built-in workspace tools, context management</td><td>Hosting, permissions, task integration, result review</td></tr>
           </tbody>
         </table></div>
         <p class="note">Choose the smallest library that covers your run shape. A fixed workflow may be simpler when every step is known in advance. Keep API keys and privileged tools on the server.</p>
+      </div>
+      <div class="codex-sdk-example">
+        <div class="code-panel"><div class="code-caption">Codex SDK · repository investigation</div><pre><code>import { Codex } from '@openai/codex-sdk';
+
+const codex = new Codex();
+const thread = codex.startThread({
+  workingDirectory: '/path/to/repository'
+});
+
+const turn = await thread.run(
+  'Diagnose the failing tests. Report evidence and a proposed fix.'
+);
+console.log(turn.finalResponse);
+
+// Continue the same agent thread after a human reviews the plan:
+const next = await thread.run('Implement the approved fix.');
+console.log(next.finalResponse);</code></pre></div>
+        <div class="code-explain"><h4>When this fits</h4><p>Use Codex SDK when the agent needs to understand and work inside a codebase: investigate CI, review a change, write a patch, or run tests. It embeds the Codex harness, which already manages tool use and the agent loop.</p><p>Your application still decides when to start a thread, which repository it can access, what permissions apply, and whether to accept or publish its changes. Run the SDK server-side with a configured Codex runtime.</p></div>
       </div>
       <div class="callout compact"><strong>Deployment boundary:</strong> this guide is a static site. The sample agent belongs in a backend, serverless function, or worker where secrets and tool permissions remain private.</div>
     </section>
@@ -507,6 +526,7 @@ tool → { "timeouts": 42, "sample": "..." }</code></pre></div>
       <div class="source-list">
         <a href="https://openai.github.io/openai-agents-js/guides/running-agents/" target="_blank" rel="noopener noreferrer"><strong>OpenAI Agents SDK · Running agents</strong><span>Runner loop, tool calls, handoffs, and turn limits ↗</span></a>
         <a href="https://openai.github.io/openai-agents-js/guides/quickstart/" target="_blank" rel="noopener noreferrer"><strong>OpenAI Agents SDK · JavaScript quickstart</strong><span>Agent, tool, run, and the code example above ↗</span></a>
+        <a href="https://developers.openai.com/codex/codex-sdk" target="_blank" rel="noopener noreferrer"><strong>Codex SDK · Official guide</strong><span>Programmatic Codex threads for engineering workflows ↗</span></a>
         <a href="https://docs.langchain.com/oss/javascript/langgraph/overview" target="_blank" rel="noopener noreferrer"><strong>LangGraph · Overview</strong><span>Durable state and explicit orchestration graphs ↗</span></a>
         <a href="https://code.claude.com/docs/en/agent-sdk/overview" target="_blank" rel="noopener noreferrer"><strong>Claude Agent SDK · Overview</strong><span>Agent loop and code-oriented tools ↗</span></a>
         <a href="https://openai.github.io/openai-agents-js/guides/guardrails/" target="_blank" rel="noopener noreferrer"><strong>OpenAI Agents SDK · Guardrails</strong><span>Where checks run around inputs, outputs, and tools ↗</span></a>

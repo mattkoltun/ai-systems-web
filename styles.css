@@ -268,6 +268,8 @@ tr:last-child td{border-bottom:0}
 .agent-build-steps p{color:var(--muted);font-size:12px;margin:5px 0 0}
 .agent-code-grid{grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);margin-top:0}
 .agent-code-grid .code-panel pre{font-size:11px}
+.codex-sdk-example{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:13px;margin-top:22px}
+.codex-sdk-example .code-panel pre{font-size:11px}
 .code-explain{border:1px solid var(--line);border-radius:14px;background:#142238;padding:24px}
 .code-explain h4{font-size:20px;margin:0 0 15px}
 .code-explain ol{padding-left:19px;margin:0}
@@ -292,7 +294,7 @@ tr:last-child td{border-bottom:0}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 @media(max-width:900px){.hero-grid{grid-template-columns:1fr}.hero-content h1{font-size:clamp(56px,10vw,90px)}.hero-visual{width:min(100%,620px);margin:8px auto 0}.hero-visual img{width:100%;margin-left:0}.hero-visual figcaption{right:5%}}
 @media(max-width:900px){.agent-contract{grid-template-columns:1fr}.contract-arrow{transform:rotate(90deg)}.agent-architecture-flow{grid-template-columns:1fr 16px 1fr;gap:8px}.agent-architecture-flow>b:nth-of-type(2){display:none}.agent-architecture-flow>div:nth-of-type(3){grid-column:1}.agent-architecture-flow>b:nth-of-type(3){grid-column:2}.agent-architecture-flow>div:nth-of-type(4){grid-column:3}.agent-build-steps{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:760px){.agent-boundary,.use-case-grid,.agent-code-grid{grid-template-columns:1fr}.trigger-grid{grid-template-columns:repeat(2,1fr)}.agent-cycle{grid-template-columns:repeat(2,1fr)}.agent-equation{justify-content:flex-start}}
+@media(max-width:760px){.agent-boundary,.use-case-grid,.agent-code-grid,.codex-sdk-example{grid-template-columns:1fr}.trigger-grid{grid-template-columns:repeat(2,1fr)}.agent-cycle{grid-template-columns:repeat(2,1fr)}.agent-equation{justify-content:flex-start}}
 @media(max-width:520px){.hero{padding:55px 0 44px}.hero-content h1{font-size:clamp(45px,12vw,68px)}.hero-visual figcaption{position:relative;right:auto;bottom:auto;width:max-content;max-width:100%;margin:-8px auto 0}.hero-path{margin-top:28px}}
 @media(max-width:520px){.trigger-grid,.agent-build-steps{grid-template-columns:1fr}.agent-architecture-flow{grid-template-columns:1fr}.agent-architecture-flow>b,.agent-architecture-flow>div:nth-of-type(3),.agent-architecture-flow>div:nth-of-type(4){grid-column:auto}.agent-architecture-flow>b:nth-of-type(2){display:block;transform:rotate(90deg)}.agent-architecture-flow>b{transform:rotate(90deg)}.agent-equation{gap:7px}.agent-equation span,.agent-equation strong{font-size:11px;padding:7px 9px}}
 @media(prefers-reduced-motion:reduce){.hero-content,.hero-visual,.hero-visual img,.hero-halo,.hero-path span,.visual-pulse,.signal{animation:none!important}.reveal-pending.is-visible{animation:none}.trace-progress span,.card,.button{transition:none}}

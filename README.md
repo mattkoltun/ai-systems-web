@@ -2,7 +2,7 @@
 
 An interactive field guide for engineers covering execution environments (workspaces, sandboxes, containers, and shells), harnesses, agent inputs and triggers, real-world use cases, agent loops, planning, tool calls, goal verification, and build blueprints. Two interactive traces show an incident investigation and a coding task.
 
-The agent code example is educational and belongs in a separate server-side project. This website does not run a model or store API keys.
+The OpenAI Agents SDK and Codex SDK code examples are educational and belong in separate server-side projects. This website does not run a model or store API keys.
 
 ## Local development
 
