@@ -1,52 +1,299 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="A visual field guide to LLMs, agents, harnesses, tools, skills and MCP"><title>AI Systems — Engineering Field Guide</title>
-<style>
-:root{font:16px/1.6 Inter,ui-sans-serif,system-ui,sans-serif;color:#e5edfc;background:#091121;--panel:#121e34;--border:#2b405f;--accent:#77d4ff}*{box-sizing:border-box}body{margin:0}a{color:var(--accent)}header{padding:72px max(24px,calc((100vw - 1080px)/2));background:radial-gradient(ellipse at 80% 0,#223f78,#091121 65%)}h1{font-size:clamp(42px,6vw,76px);line-height:1.07;letter-spacing:-.05em;margin:.3em 0}h2{font-size:32px;letter-spacing:-.035em;line-height:1.2}h3{margin:.3em 0}p{color:#afc1db}.lead{font-size:21px;max-width:780px}.label{font-size:12px;text-transform:uppercase;letter-spacing:.2em;color:var(--accent)}main{max-width:1130px;padding:36px 24px 95px;margin:auto}.section{margin:80px 0}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:14px}.card,.diagram,.console{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:23px}.card{min-height:185px}.card p{margin:8px 0 0}.small{font-size:13px;color:#8ca2c5}.flow{display:flex;align-items:stretch;flex-wrap:wrap;gap:9px}.node{flex:1;min-width:135px;text-align:center;padding:17px 10px;border-radius:10px;border:1px solid #466b98;background:#192c49;font-weight:600}.node small{display:block;font-size:12px;font-weight:400;color:#9bb4da}.arrow{align-self:center;color:var(--accent);font-size:25px}.diagram{margin:20px 0}button{cursor:pointer;background:#20496f;border:1px solid #4d8bc0;border-radius:9px;color:white;padding:11px 16px;margin:5px 8px 0 0}button:disabled{opacity:.35;cursor:default}pre{padding:20px;white-space:pre-wrap;background:#07101e;color:#a3e3c6;border-radius:11px;overflow:auto}.console{margin-top:15px}.comparison{width:100%;border-collapse:collapse}td,th{text-align:left;padding:13px;border-bottom:1px solid var(--border);vertical-align:top}th{color:var(--accent)}nav a{margin-right:15px;text-decoration:none;font-size:13px}footer{border-top:1px solid var(--border);padding-top:22px;color:#879bb7}@media(max-width:600px){header{padding:48px 24px}.arrow{display:none}.node{min-width:45%}td,th{font-size:13px}}
-</style></head>
-<body><header><div class="label">Engineering knowledge base / 101 → implementation</div><h1>AI systems,<br>from model to agent.</h1><p class="lead">A visual map of the pieces behind modern AI applications. Learn what runs where, what calls what, and how to build a reliable agent.</p><nav><a href="#vocabulary">Vocabulary</a><a href="#architecture">Architecture</a><a href="#trace">Agent loop</a><a href="#interfaces">Interfaces</a><a href="#products">Products</a></nav></header>
-<main><section id="vocabulary" class="section"><div class="label">01 · Key concepts</div><h2>Different layers, different responsibilities</h2><div class="cards">
-<article class="card"><div class="label">Inference</div><h3>AI model / LLM</h3><p>Weights plus inference runtime. Given input context, predicts tokens; may emit natural-language text or structured tool-call requests.</p></article>
-<article class="card"><div class="label">Callable capability</div><h3>Tool</h3><p>Function with schema, arguments, permissions and results. Example: search logs, execute code, read a file, query a database.</p></article>
-<article class="card"><div class="label">Interoperability</div><h3>MCP</h3><p>Model Context Protocol standardizes exposing tools, resources and prompts between client applications and external servers.</p></article>
-<article class="card"><div class="label">Reusable expertise</div><h3>Skill</h3><p>Task-specific instructions, examples, scripts and assets. A skill explains how to perform work; a tool performs an operation.</p></article>
-<article class="card"><div class="label">Control plane</div><h3>Harness</h3><p>Software managing prompt composition, memory/context, model calls, tool execution, retries, safety and lifecycle.</p></article>
-<article class="card"><div class="label">Autonomous workflow</div><h3>Agent</h3><p>A model coupled to a harness and tools that observes, decides and acts over multiple steps to complete a goal.</p></article>
-<article class="card"><div class="label">Integration packaging</div><h3>Plugin / connector</h3><p>Product integration exposing capabilities to an assistant. May use APIs, MCP servers, workflows or specialized logic.</p></article>
-<article class="card"><div class="label">Application</div><h3>Chat product</h3><p>UI and backend for conversations, sessions, files, identity, model access and optional agent/tool integrations.</p></article>
-</div></section>
-<section class="section" id="architecture"><div class="label">02 · System architecture</div><h2>The complete request path</h2><div class="diagram"><div class="flow"><div class="node">User<small>Goal / request</small></div><b class="arrow">→</b><div class="node">Chat / API<small>Session & identity</small></div><b class="arrow">→</b><div class="node">Harness<small>Policies, context, loop</small></div><b class="arrow">⇄</b><div class="node">Model<small>Inference & decisions</small></div></div></div><div class="diagram"><div class="flow"><div class="node">Harness<small>Receives tool call</small></div><b class="arrow">→</b><div class="node">Tool adapter<small>Validate & authorize</small></div><b class="arrow">→</b><div class="node">MCP client / API<small>Transport</small></div><b class="arrow">→</b><div class="node">External systems<small>DB · shell · GitHub · web</small></div></div></div><p><strong>Key boundary:</strong> the model does not directly execute actions. It proposes a tool call; the harness decides whether and how to run it and returns observations to the model. MCP is optional—many agents use native function APIs.</p></section>
-<section class="section" id="trace"><div class="label">03 · Interactive walkthrough</div><h2>Inside an agent loop</h2><p>Follow an engineer’s request to investigate an API latency spike, one decision at a time.</p><div class="diagram"><div class="flow" id="trace-flow" aria-label="Current active runtime stage"></div></div><div><button id="prev">← Previous</button><button id="next">Next step →</button><button id="reset">Restart</button></div><div class="console"><div class="label">Execution trace</div><pre id="trace-log" aria-live="polite"></pre></div></section>
-<section class="section" id="interfaces"><div class="label">04 · Interface contracts</div><h2>What you actually implement</h2><div class="cards">
-<div class="card"><h3>Model interface</h3><pre>model.generate({
-  messages,
-  tools,
-  instructions
-}) → text | tool_calls</pre><p>Supports structured generation and tool invocation; model output is untrusted until validated.</p></div>
-<div class="card"><h3>Tool interface</h3><pre>search_logs({
-  service: string,
-  since: string
-}) → LogEvent[]</pre><p>Define input schema, capability boundaries, timeout, error format and access controls.</p></div>
-<div class="card"><h3>Harness state</h3><pre>{
-  conversation,
-  checkpoints,
-  toolResults,
-  budget,
-  approvals
-}</pre><p>Use durable state to recover, replay, inspect and constrain multi-step runs.</p></div>
-</div><h3>Minimal agent-loop pseudocode</h3><pre>while remainingBudget &gt; 0:
-    response = model.generate(messages, tools=schemas)
-    if not response.tool_calls:
-        return response.text
-    for call in response.tool_calls:
-        validate(call); authorize(call)
-        result = execute_with_timeout(call)
-        messages.append(tool_observation(result))</pre><p>Production concerns: idempotency, approval gates for destructive actions, injection resistance, tool-output trust, tracing, token budgets, error handling and evaluation.</p></section>
-<section class="section" id="products"><div class="label">05 · Product examples</div><h2>Models are not chat apps</h2><table class="comparison"><thead><tr><th>Product</th><th>How the layers fit together</th></tr></thead><tbody><tr><td>ChatGPT</td><td>Chat application with OpenAI models plus optional tools, memory, connectors and agent workflows.</td></tr><tr><td>Codex</td><td>Coding agent: model + coding harness + repository context + file, shell and review tools.</td></tr><tr><td>Claude / Claude Code</td><td>Anthropic models, chat product and a separate coding-agent environment.</td></tr><tr><td>Gemini</td><td>Google model family and assistant products, plus developer APIs and agent tooling.</td></tr></tbody></table><p>Product capabilities change over time. These examples illustrate architecture rather than guaranteeing a specific feature or integration.</p></section>
-<section class="section"><div class="label">06 · Architecture choices</div><h2>How to start building</h2><div class="diagram"><div class="flow"><div class="node">Goal<small>Acceptance criteria</small></div><b class="arrow">→</b><div class="node">Model<small>Choose capability/cost</small></div><b class="arrow">→</b><div class="node">Tools<small>Typed operations</small></div><b class="arrow">→</b><div class="node">Harness<small>Policies & state</small></div><b class="arrow">→</b><div class="node">Evaluate<small>Quality / safety / cost</small></div></div></div><p>Start with one agent and a small set of deterministic tools. Add MCP for cross-host interoperability, skills for repeatable procedures, and multi-agent patterns only when they bring measurable value.</p></section>
-<footer>AI Systems · Engineer’s Field Guide · Built as a dependency-free static application</footer></main>
-<script>
-const steps=[['User','Investigate elevated API latency'],['Harness','Load instructions, log-search tool schema and incident context'],['Model','Decides to call search_logs({service:"api",since:"15m"})'],['Tool','Executes authorized log search and returns timeouts plus request IDs'],['Model','Requests get_deployments() to correlate changes'],['Tool','Returns recent rollout metadata'],['Model','Summarizes probable cause with evidence and uncertainty'],['Harness','Responds to user; requires approval for any rollback']];
-let index=0;
-function render(){document.getElementById('trace-flow').innerHTML=['User','Harness','Model','Tool'].map((s,k)=>'<div class="node" style="border-color:'+(steps[index][0]===s?'#77d4ff':'#466b98')+';opacity:'+(steps[index][0]===s?'1':'.45')+'">'+s+'<small>'+(steps[index][0]===s?'ACTIVE':'')+'</small></div>'+(k<3?'<b class="arrow">→</b>':'')).join('');document.getElementById('trace-log').textContent=steps.slice(0,index+1).map((s,i)=>String(i+1).padStart(2,'0')+' '+s[0]+': '+s[1]).join('\n');document.getElementById('prev').disabled=index===0;document.getElementById('next').disabled=index===steps.length-1}
-document.getElementById('next').onclick=()=>{index=Math.min(index+1,steps.length-1);render()};document.getElementById('prev').onclick=()=>{index=Math.max(index-1,0);render()};document.getElementById('reset').onclick=()=>{index=0;render()};render();
-</script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive engineering guide to models, MCP, tools, harnesses, agents, workspaces, sandboxes, containers and shells">
+  <title>AI Systems — Engineering Field Guide</title>
+  <style>
+    :root {
+      --bg: #091121;
+      --panel: #111c31;
+      --border: #304a72;
+      --text: #e8eefb;
+      --muted: #afc1db;
+      --accent: #79d8ff;
+      --accent-2: #b69cff;
+      --accent-3: #79ffbe;
+      --warning: #ffc777;
+      --shadow: 0 18px 50px rgba(0,0,0,.28);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: radial-gradient(circle at top right, rgba(63,112,220,.35), transparent 35%), var(--bg); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header { padding: 78px max(24px, calc((100vw - 1120px)/2)); border-bottom: 1px solid rgba(121,216,255,.18); }
+    .eyebrow { display: inline-block; color: var(--accent); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; margin-bottom: 16px; }
+    h1 { margin: 0 0 16px; font-size: clamp(42px, 6vw, 78px); line-height: 1.02; letter-spacing: -.05em; max-width: 900px; }
+    .hero-copy { max-width: 860px; color: var(--muted); font-size: clamp(18px, 2.2vw, 22px); margin-bottom: 28px; }
+    .hero-chips, nav { display: flex; gap: 12px; flex-wrap: wrap; }
+    .chip, nav a { background: rgba(16,26,46,.7); border: 1px solid rgba(121,216,255,.22); color: var(--text); padding: 10px 14px; border-radius: 999px; font-size: 14px; }
+    main { padding: 32px max(24px, calc((100vw - 1120px)/2)) 88px; }
+    section { margin-top: 32px; }
+    .section-title { margin: 0 0 10px; font-size: 30px; letter-spacing: -.03em; }
+    .section-subtitle { color: var(--muted); max-width: 860px; margin: 0 0 24px; }
+    .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .card, .panel { background: linear-gradient(180deg, rgba(20,31,55,.98), rgba(14,24,43,.98)); border: 1px solid rgba(121,216,255,.14); border-radius: 20px; padding: 20px; box-shadow: var(--shadow); }
+    .card h3, .panel h3 { margin: 0 0 8px; font-size: 20px; }
+    .kicker { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+    p, li { color: var(--muted); }
+    .two-col { display: grid; grid-template-columns: 1.2fr .8fr; gap: 20px; }
+    @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+    .containment { display: grid; gap: 16px; padding: 18px; border-radius: 24px; border: 1px solid rgba(182,156,255,.25); background: linear-gradient(180deg, rgba(33,22,52,.7), rgba(18,23,40,.7)); }
+    .layer { border-radius: 18px; padding: 16px; border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.03); }
+    .layer h4 { margin: 0 0 8px; font-size: 18px; }
+    .layer .meta { font-size: 13px; color: var(--warning); margin-bottom: 6px; }
+    .layer p { margin: 0; }
+    .flow { display: grid; gap: 14px; align-items: center; grid-template-columns: repeat(7, minmax(0,1fr)); overflow-x: auto; padding-bottom: 6px; }
+    .node { min-width: 140px; text-align: center; background: rgba(16,28,48,.92); border: 1px solid rgba(121,216,255,.25); border-radius: 16px; padding: 14px; }
+    .node strong { display: block; margin-bottom: 5px; }
+    .arrow { color: var(--accent-3); text-align: center; font-size: 26px; opacity: .9; }
+    .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 16px; }
+    .legend-item { border: 1px solid rgba(121,216,255,.15); border-radius: 16px; padding: 14px; background: rgba(255,255,255,.02); }
+    .legend-item b { display: block; margin-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 18px; border: 1px solid rgba(121,216,255,.14); background: rgba(17,28,49,.9); }
+    th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.06); vertical-align: top; }
+    th { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+    td { color: var(--muted); }
+    .stepper { display: grid; gap: 14px; }
+    .step-controls { display: flex; gap: 10px; flex-wrap: wrap; }
+    button { border: 1px solid rgba(121,216,255,.2); background: rgba(16,27,47,.95); color: var(--text); padding: 10px 14px; border-radius: 12px; cursor: pointer; font: inherit; }
+    button:hover { border-color: rgba(121,216,255,.4); }
+    pre { margin: 0; white-space: pre-wrap; color: #dbe8ff; background: rgba(5,10,18,.55); border: 1px solid rgba(121,216,255,.14); border-radius: 14px; padding: 16px; overflow: auto; font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .callout { border-left: 4px solid var(--accent-3); padding: 14px 16px; background: rgba(121,255,190,.06); border-radius: 0 14px 14px 0; color: var(--text); }
+    footer { padding-top: 30px; margin-top: 40px; border-top: 1px solid rgba(121,216,255,.12); color: var(--muted); font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">AI systems field guide · expanded edition</div>
+    <h1>From workspace to shell, from model to agent.</h1>
+    <p class="hero-copy">This edition adds the missing operational layers around modern AI apps: <strong>workspace</strong>, <strong>sandbox</strong>, <strong>container</strong>, <strong>shell</strong>, and how those wrap around harnesses, tools, MCP servers, models and agents. The goal is to make the stack feel physical and implementable, not mystical.</p>
+    <div class="hero-chips">
+      <div class="chip">Workspace</div>
+      <div class="chip">Sandbox</div>
+      <div class="chip">Container</div>
+      <div class="chip">Shell</div>
+      <div class="chip">Harness</div>
+      <div class="chip">Tool / MCP</div>
+      <div class="chip">Agent loop</div>
+    </div>
+    <nav style="margin-top:20px">
+      <a href="#stack">Stack</a>
+      <a href="#containment">Containment</a>
+      <a href="#runtime">Runtime flow</a>
+      <a href="#taxonomy">Taxonomy</a>
+      <a href="#trace">Interactive trace</a>
+      <a href="#wrapping">Who wraps what</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="stack">
+      <div class="kicker">1 · core vocabulary</div>
+      <h2 class="section-title">The system is more than the model.</h2>
+      <p class="section-subtitle">A useful mental model is to separate <em>execution environment</em> concepts from <em>AI application</em> concepts. Workspaces, sandboxes, containers and shells define where things run. Harnesses, tools, MCP, skills, models and agents define what behavior is possible inside that environment.</p>
+      <div class="grid">
+        <article class="card"><div class="kicker">Execution scope</div><h3>Workspace</h3><p>A durable project context: files, repositories, settings, environment, permissions and sometimes multiple sandboxes. Think of it as the top-level place where work lives.</p></article>
+        <article class="card"><div class="kicker">Isolated execution</div><h3>Sandbox</h3><p>A safe environment created for a task or session. It limits damage, scopes resources and lets an agent inspect code, run commands and edit files with guardrails.</p></article>
+        <article class="card"><div class="kicker">Packaging boundary</div><h3>Container</h3><p>A packaged runtime with filesystem, process space and dependencies. Sandboxes are often implemented using containers or container-like isolation, though they are not conceptually identical.</p></article>
+        <article class="card"><div class="kicker">Human / agent entrypoint</div><h3>Shell</h3><p>A command interpreter inside the environment. Bash, zsh, fish or PowerShell expose processes and files. The shell is one tool inside the container or sandbox — not the sandbox itself.</p></article>
+        <article class="card"><div class="kicker">Reasoning engine</div><h3>Model</h3><p>The inference system that predicts text or structured tool calls. It does not own files or processes by itself; it acts through the harness and tools around it.</p></article>
+        <article class="card"><div class="kicker">Control plane</div><h3>Harness</h3><p>Application logic that composes prompts, manages memory, picks tools, validates calls, handles retries, approvals and state transitions.</p></article>
+        <article class="card"><div class="kicker">Capability surface</div><h3>Tool / MCP server</h3><p>Concrete operations such as read_file, search_logs, run_shell_command, fetch_url or list_tickets. MCP standardizes how external capabilities are exposed.</p></article>
+        <article class="card"><div class="kicker">Coordinated system</div><h3>Agent</h3><p>A model plus harness plus capabilities operating over multiple steps toward a goal. The “agent” is the whole loop, not just the model.</p></article>
+      </div>
+    </section>
+
+    <section id="containment">
+      <div class="kicker">2 · containment model</div>
+      <h2 class="section-title">What contains what?</h2>
+      <p class="section-subtitle">These terms are often mixed together. The key is to think in nested boundaries. Not every product uses the exact same layers, but the pattern below is common.</p>
+      <div class="containment">
+        <div class="layer"><div class="meta">Outer organizational scope</div><h4>Workspace</h4><p>May contain repositories, configuration, task history, secrets references, and one or more execution environments. A workspace is usually persistent across sessions.</p></div>
+        <div class="layer"><div class="meta">Per-task or per-session execution</div><h4>Sandbox</h4><p>Created to safely perform work. It may mount part of the workspace, expose only some tools, and enforce limits on CPU, memory, network and filesystem access.</p></div>
+        <div class="layer"><div class="meta">OS-level isolation / packaging</div><h4>Container</h4><p>Often used to implement the sandbox. Provides processes, filesystem and dependencies. One sandbox may correspond to one container, though products may use lighter or heavier isolation models.</p></div>
+        <div class="layer"><div class="meta">Interactive process inside the environment</div><h4>Shell</h4><p>The shell runs inside the container or sandbox. It is an interface to start commands, inspect files and chain programs. Shell commands are one type of tool an agent may call.</p></div>
+        <div class="layer"><div class="meta">Application logic inside or alongside the environment</div><h4>Harness + tools + model</h4><p>The harness may live outside the sandbox while dispatching operations into it, or partly inside it. The model decides; the harness orchestrates; the tools act.</p></div>
+      </div>
+      <div class="callout" style="margin-top:18px">A good shorthand: <strong>workspace is where the work belongs</strong>, <strong>sandbox is where the work executes</strong>, <strong>container is how isolation is packaged</strong>, and <strong>shell is one interface inside that environment</strong>.</div>
+    </section>
+
+    <section id="runtime">
+      <div class="kicker">3 · runtime architecture</div>
+      <h2 class="section-title">How the layers connect during execution</h2>
+      <p class="section-subtitle">The runtime path below shows the common interaction pattern from user intent to action inside an isolated environment.</p>
+      <div class="panel">
+        <div class="flow">
+          <div class="node"><strong>User</strong><span>goal / request</span></div>
+          <div class="arrow">→</div>
+          <div class="node"><strong>Chat / App</strong><span>UI + session</span></div>
+          <div class="arrow">→</div>
+          <div class="node"><strong>Harness</strong><span>prompting, policy, state</span></div>
+          <div class="arrow">⇄</div>
+          <div class="node"><strong>Model</strong><span>reasoning + tool selection</span></div>
+          <div class="arrow">→</div>
+          <div class="node"><strong>Tool layer</strong><span>MCP, APIs, shell, file ops</span></div>
+          <div class="arrow">→</div>
+          <div class="node"><strong>Sandbox</strong><span>isolated execution</span></div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><b>Workspace</b>Usually sits above the diagram as the persistent project context that the sandbox mounts or references.</div>
+          <div class="legend-item"><b>Container</b>Often an implementation detail inside the sandbox box.</div>
+          <div class="legend-item"><b>Shell</b>Usually one tool inside the tool layer, executing in the sandbox/container.</div>
+          <div class="legend-item"><b>Agent</b>The combined behavior of harness + model + tools, repeated over multiple turns until the goal is complete.</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="kicker">4 · detailed taxonomy</div>
+      <h2 class="section-title">Execution concepts vs AI concepts</h2>
+      <div class="two-col">
+        <div class="panel">
+          <h3>Execution environment terms</h3>
+          <ul>
+            <li><strong>Workspace:</strong> durable project scope; often contains code, tasks, settings and history.</li>
+            <li><strong>Sandbox:</strong> temporary or semi-persistent execution environment for safe work.</li>
+            <li><strong>Container:</strong> process/filesystem isolation package that may back the sandbox.</li>
+            <li><strong>Shell:</strong> interactive command runner inside the environment.</li>
+            <li><strong>Process:</strong> a running program such as node, python, git, ripgrep or pytest.</li>
+            <li><strong>Filesystem:</strong> the mounted files visible to the sandbox and shell.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>AI application terms</h3>
+          <ul>
+            <li><strong>Model:</strong> predicts tokens and tool calls.</li>
+            <li><strong>Tool:</strong> callable capability with schema and runtime behavior.</li>
+            <li><strong>MCP:</strong> protocol for exposing tools/resources/prompts.</li>
+            <li><strong>Skill:</strong> reusable guidance, recipes, prompts, examples or scripts.</li>
+            <li><strong>Harness:</strong> orchestrator that turns model output into safe action.</li>
+            <li><strong>Agent:</strong> the end-to-end loop coordinating reasoning and action.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="wrapping">
+      <div class="kicker">5 · who wraps what</div>
+      <h2 class="section-title">A practical relationship map</h2>
+      <table>
+        <thead><tr><th>Concept</th><th>Usually wraps / contains</th><th>Usually interacts with</th><th>What it is not</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Workspace</strong></td><td>Files, repos, settings, sometimes multiple sandboxes</td><td>Users, app, harness</td><td>Not the same as a shell or container</td></tr>
+          <tr><td><strong>Sandbox</strong></td><td>Container or VM-like environment, shell sessions, processes</td><td>Harness, tools, filesystem, network policy</td><td>Not just “a chat”</td></tr>
+          <tr><td><strong>Container</strong></td><td>Filesystem layers, processes, installed dependencies</td><td>Shell, runtime, supervisor</td><td>Not automatically a full product concept</td></tr>
+          <tr><td><strong>Shell</strong></td><td>Command execution context, subprocesses</td><td>Filesystem, binaries, env vars</td><td>Not the whole sandbox</td></tr>
+          <tr><td><strong>Harness</strong></td><td>Prompts, tool schemas, memory, policies</td><td>Model, tools, user session</td><td>Not the model itself</td></tr>
+          <tr><td><strong>Agent</strong></td><td>A multi-step loop using model + tools</td><td>Harness, model, sandbox, external services</td><td>Not just a single LLM response</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="trace">
+      <div class="kicker">6 · interactive example</div>
+      <h2 class="section-title">Follow one request through the full stack</h2>
+      <p class="section-subtitle">This walkthrough starts at the product level and drills down to the shell inside a sandbox.</p>
+      <div class="stepper panel">
+        <div class="step-controls">
+          <button id="prev">← Previous</button>
+          <button id="next">Next →</button>
+          <button id="reset">Restart</button>
+        </div>
+        <div id="step-title" style="font-size:22px;font-weight:700"></div>
+        <div id="step-copy" style="color:var(--muted)"></div>
+        <pre id="step-log"></pre>
+      </div>
+    </section>
+
+    <section id="taxonomy">
+      <div class="kicker">7 · implementation notes</div>
+      <h2 class="section-title">What to build if you were implementing this yourself</h2>
+      <div class="grid">
+        <article class="card"><h3>Workspace manager</h3><p>Knows which repos, files, secrets and task history belong to a user or project.</p></article>
+        <article class="card"><h3>Sandbox manager</h3><p>Creates isolated environments, mounts files, enforces limits and destroys or snapshots them.</p></article>
+        <article class="card"><h3>Tool runtime</h3><p>Executes shell, file, search, browser and API tools with validation and timeout handling.</p></article>
+        <article class="card"><h3>Harness</h3><p>Shapes prompts, selects context, interprets tool calls, requests approval, stores checkpoints and formats answers.</p></article>
+        <article class="card"><h3>Model gateway</h3><p>Calls one or more models and normalizes tool-call output and response formats.</p></article>
+        <article class="card"><h3>Observability</h3><p>Traces every step: prompt, tool call, shell command, file diff, errors, tokens and final output.</p></article>
+      </div>
+    </section>
+
+    <section>
+      <div class="kicker">8 · mental model summary</div>
+      <h2 class="section-title">The shortest accurate summary</h2>
+      <div class="panel">
+<pre>Workspace
+└─ Sandbox
+   └─ Container / isolated runtime
+      └─ Shell + processes + filesystem
+         └─ Tools (shell, file ops, browser, APIs, MCP)
+            └─ Harness orchestrates access to them
+               └─ Model decides which tools to use
+                  └─ Agent = repeated loop of deciding and acting</pre>
+      </div>
+    </section>
+
+    <footer>
+      AI Systems · Engineering Field Guide · Expanded with workspace, sandbox, container and shell concepts. Built as a dependency-free static app.
+    </footer>
+  </main>
+
+  <script>
+    const steps = [
+      {
+        title: '1. User asks the app to investigate a bug',
+        copy: 'The request enters the chat product or coding application. At this point, nothing has touched the shell yet.',
+        log: 'USER → APP\nGoal: "Investigate why checkout tests started failing after the last commit."'
+      },
+      {
+        title: '2. The harness prepares context',
+        copy: 'The harness selects instructions, repository context, tool schemas and policy rules. It may also choose which workspace and sandbox to use.',
+        log: 'HARNESS\n- Load workspace metadata\n- Attach repository summary\n- Expose tools: read_file, search_code, run_shell_command\n- Add safety rules and budget'
+      },
+      {
+        title: '3. A sandbox is provisioned',
+        copy: 'The app creates or resumes a sandbox, often backed by a container. Relevant files from the workspace are mounted or copied in.',
+        log: 'SANDBOX\n- Create isolated environment\n- Mount repo snapshot\n- Install runtime and dependencies\n- Start shell session'
+      },
+      {
+        title: '4. The model chooses a tool call',
+        copy: 'The model does not directly run code. It emits a structured request such as searching for the failing test or running a shell command.',
+        log: 'MODEL OUTPUT\nTool call: run_shell_command({ command: "npm test -- checkout" })'
+      },
+      {
+        title: '5. The tool executes inside the sandbox shell',
+        copy: 'The harness validates the request, then dispatches it to the shell inside the sandbox/container.',
+        log: 'TOOL RUNTIME\nShell: bash\nCommand: npm test -- checkout\nResult: stack trace + failing assertion'
+      },
+      {
+        title: '6. The model interprets results and keeps iterating',
+        copy: 'The model sees the command output, decides to inspect files or run more commands, and continues the agent loop.',
+        log: 'AGENT LOOP\n- read_file(test.spec.ts)\n- search_code("checkout timeout")\n- run_shell_command("git diff HEAD~1")'
+      },
+      {
+        title: '7. The harness returns a final answer',
+        copy: 'When enough evidence is gathered, the harness formats the response and may attach diffs, citations or a proposed fix.',
+        log: 'FINAL RESPONSE\nRoot cause: timeout regression introduced in checkout client config.\nEvidence: failing test, diff, stack trace, config file lines.'
+      }
+    ];
+    let idx = 0;
+    const title = document.getElementById('step-title');
+    const copy = document.getElementById('step-copy');
+    const log = document.getElementById('step-log');
+    function renderStep() {
+      title.textContent = steps[idx].title;
+      copy.textContent = steps[idx].copy;
+      log.textContent = steps.map((step, i) => `${i === idx ? '▶' : ' '} ${step.title}\n${i === idx ? step.log : ''}`).join('\n\n');
+    }
+    document.getElementById('prev').addEventListener('click', () => { idx = Math.max(0, idx - 1); renderStep(); });
+    document.getElementById('next').addEventListener('click', () => { idx = Math.min(steps.length - 1, idx + 1); renderStep(); });
+    document.getElementById('reset').addEventListener('click', () => { idx = 0; renderStep(); });
+    renderStep();
+  </script>
+</body>
+</html>
