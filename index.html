@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An engineer's field guide to agent loops, planning, tools, and the harness that turns model output into reliable work.">
+  <meta name="theme-color" content="#0b1020">
+  <title>AI Systems — The Agent Loop & Harness Field Guide</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <nav class="nav wrap" aria-label="Main navigation">
+      <a class="brand" href="#top" aria-label="AI Systems, back to top">AI<span>/</span>SYSTEMS</a>
+      <div class="nav-links">
+        <a href="#environment">Environment</a>
+        <a href="#anatomy">Harness</a>
+        <a href="#loop">Loop</a>
+        <a href="#planning">Planning</a>
+        <a href="#tools">Tools</a>
+        <a href="#blueprint">Build it</a>
+      </div>
+    </nav>
+    <div class="hero wrap" id="top">
+      <div class="eyebrow"><span class="signal"></span> Engineering field guide · 101 to implementation</div>
+      <h1>How an agent<br><em>gets work done.</em></h1>
+      <p class="hero-copy">A model proposes the next step. A harness turns it into a controlled cycle of planning, tool use, observation, and verification. Workspaces and sandboxes give that cycle a place to run. Follow the system from a user goal to a defensible result.</p>
+      <div class="hero-actions">
+        <a class="button primary" href="#loop">Explore the loop <span aria-hidden="true">↗</span></a>
+        <a class="button secondary" href="#blueprint">See the build blueprint</a>
+      </div>
+      <div class="hero-path" aria-label="Agent cycle">
+        <span>Goal</span><b aria-hidden="true">→</b><span>Plan</span><b aria-hidden="true">→</b><span>Act</span><b aria-hidden="true">→</b><span>Observe</span><b aria-hidden="true">→</b><span>Verify</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+    <section id="concepts" class="section">
+      <div class="section-head">
+        <div class="eyebrow">01 / Mental model</div>
+        <h2>Six pieces, six responsibilities</h2>
+        <p>The words overlap in everyday conversation. Their boundaries matter when you design the system.</p>
+      </div>
+      <div class="concept-grid">
+        <article class="card"><div class="card-tag">Inference</div><h3>Model / LLM</h3><p>Produces text or structured tool requests from the context it receives. It predicts; it does not directly execute your code.</p></article>
+        <article class="card"><div class="card-tag">Capability</div><h3>Tool</h3><p>A callable operation with a name, input contract, implementation, and result. It can read data or change the world.</p></article>
+        <article class="card"><div class="card-tag">Protocol</div><h3>MCP</h3><p>One way to discover and call external tools, and access resources or prompts. The host still decides what is available and permitted.</p></article>
+        <article class="card"><div class="card-tag">Procedure</div><h3>Skill</h3><p>Reusable instructions and examples for a task. It shapes decisions; it is not the executor.</p></article>
+        <article class="card accent-card"><div class="card-tag">Runtime</div><h3>Harness</h3><p>The code that assembles context, runs the loop, dispatches tools, applies limits, stores state, and records what happened.</p></article>
+        <article class="card"><div class="card-tag">Behavior</div><h3>Agent</h3><p>The model working through a harness toward a goal, adjusting its next action from observations and feedback.</p></article>
+      </div>
+      <div class="callout compact"><strong>One sentence:</strong> the model chooses a possible next move; the harness decides whether, when, and how that move becomes an action.</div>
+    </section>
+
+    <section id="environment" class="section">
+      <div class="section-head">
+        <div class="eyebrow">02 / Execution environment</div>
+        <h2>Where does the work actually run?</h2>
+        <p>An agent can inspect a repository or run a command only when its tools have access to an execution environment. These four terms describe different parts of that environment.</p>
+      </div>
+      <div class="environment-grid">
+        <article class="card"><div class="card-tag">Durable scope</div><h3>Workspace</h3><p>The project context: repositories, files, settings, and task history. It usually lasts longer than one agent run.</p></article>
+        <article class="card"><div class="card-tag">Execution boundary</div><h3>Sandbox</h3><p>A constrained place for a task to read files, run programs, or edit code. It can restrict filesystem, network, CPU, and other resources.</p></article>
+        <article class="card"><div class="card-tag">Runtime package</div><h3>Container</h3><p>One possible way to package the processes, filesystem, and dependencies used by a sandbox. A sandbox can use other isolation methods.</p></article>
+        <article class="card"><div class="card-tag">Command interface</div><h3>Shell</h3><p>A command interpreter, such as bash or zsh, that starts processes inside the environment. A shell is one tool surface, not the whole sandbox.</p></article>
+      </div>
+      <div class="environment-layout">
+        <div class="containment-model">
+          <div class="mini-label">A common containment pattern</div>
+          <div class="containment-layer"><strong>Workspace</strong><small>Persistent project context</small>
+            <div class="containment-layer"><strong>Sandbox</strong><small>Task-level execution boundary</small>
+              <div class="containment-layer"><strong>Container or VM</strong><small>Possible isolation implementation</small>
+                <div class="containment-layer"><strong>Shell + processes</strong><small>Commands read and change mounted files</small></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="environment-explain">
+          <h3>How the harness crosses the boundary</h3>
+          <ol>
+            <li><strong>Locate the workspace.</strong> Choose the repository and relevant task state.</li>
+            <li><strong>Prepare the sandbox.</strong> Mount or copy only the files and capabilities the task needs.</li>
+            <li><strong>Expose a tool.</strong> A shell or file tool gives the model a callable interface.</li>
+            <li><strong>Validate and dispatch.</strong> The harness checks the request, then executes it in the sandbox.</li>
+            <li><strong>Return an observation.</strong> Exit code, output, errors, and file changes inform the next turn.</li>
+          </ol>
+          <p>The harness can live outside the sandbox while dispatching operations into it. The model service may run elsewhere entirely. The diagram shows a common pattern, not a required physical nesting of every component.</p>
+        </div>
+      </div>
+      <div class="callout compact"><strong>Keep the boundaries distinct:</strong> a workspace holds the work, a sandbox constrains execution, a container may implement that isolation, and a shell is a way to run commands inside it.</div>
+    </section>
+
+    <section id="anatomy" class="section">
+      <div class="section-head">
+        <div class="eyebrow">03 / Harness anatomy</div>
+        <h2>What makes software a harness?</h2>
+        <p>A chat box that forwards one prompt and displays one answer is an application. It becomes an agent harness when it manages the repeated model → action → observation cycle, with control over execution and stopping.</p>
+      </div>
+      <div class="architecture" aria-label="Harness connects user goal, model, tools, and verification">
+        <div class="architecture-edge"><span class="mini-label">Input</span><strong>User goal</strong><small>Request, constraints, success criteria</small></div>
+        <div class="architecture-arrow" aria-hidden="true">→</div>
+        <div class="architecture-core"><span class="mini-label">Control plane</span><strong>Harness / runner</strong><small>Context · loop · policy · state · verification</small></div>
+        <div class="architecture-arrow" aria-hidden="true">⇄</div>
+        <div class="architecture-edge"><span class="mini-label">Decision</span><strong>Model</strong><small>Reasoning, text, proposed calls</small></div>
+        <div class="architecture-tools"><span class="mini-label">Execution plane</span><strong>Tool dispatcher → APIs / files / MCP servers</strong><small>Actual side effects and observations live here</small></div>
+      </div>
+      <div class="anatomy-grid">
+        <article class="anatomy-item"><span class="number">01</span><h3>Goal & context builder</h3><p>Turns the request, instructions, relevant history, and available tools into the next model input. It keeps evidence useful and context bounded.</p></article>
+        <article class="anatomy-item"><span class="number">02</span><h3>Model adapter</h3><p>Calls the model API and normalizes text, structured tool requests, usage, and errors into events the runner understands.</p></article>
+        <article class="anatomy-item"><span class="number">03</span><h3>Runner / state machine</h3><p>Owns the loop: ask, inspect output, execute allowed calls, append observations, repeat, or stop.</p></article>
+        <article class="anatomy-item"><span class="number">04</span><h3>Tool registry & dispatcher</h3><p>Advertises tool schemas, resolves names, validates arguments, invokes implementations, and returns structured results.</p></article>
+        <article class="anatomy-item"><span class="number">05</span><h3>Policy & approval gate</h3><p>Checks identity, scope, and side effects before execution. A model request never grants itself permission.</p></article>
+        <article class="anatomy-item"><span class="number">06</span><h3>State & checkpoints</h3><p>Stores messages, plan, tool outputs, and progress so the run can resume or hand work to a later session.</p></article>
+        <article class="anatomy-item"><span class="number">07</span><h3>Verifier & stop rules</h3><p>Checks completion against observable criteria. It also stops on budget, deadline, cancellation, or unrecoverable failure.</p></article>
+        <article class="anatomy-item"><span class="number">08</span><h3>Tracing & recovery</h3><p>Records decisions, calls, latency, and failures. Timeouts, retries, and idempotency rules keep failures contained.</p></article>
+      </div>
+      <p class="note">These are responsibilities, not eight required services. A small harness can implement them in one process; a production system may split them across components.</p>
+    </section>
+
+    <section id="loop" class="section">
+      <div class="section-head">
+        <div class="eyebrow">04 / Interactive trace</div>
+        <h2>Walk the loop, one decision at a time</h2>
+        <p>Compare an incident investigation with a coding task. Both follow the same loop, but the coding task uses a workspace, sandbox, and shell.</p>
+      </div>
+      <div class="scenario-buttons" role="group" aria-label="Choose a trace scenario">
+        <button type="button" data-scenario="incident" aria-pressed="true">API latency incident</button>
+        <button type="button" data-scenario="code" aria-pressed="false">Failing checkout test</button>
+      </div>
+      <div class="trace-layout">
+        <div class="trace-rail">
+          <div class="rail-title">Run timeline <span id="step-count">1 / 9</span></div>
+          <ol id="step-list" class="step-list" aria-label="Agent loop steps"></ol>
+        </div>
+        <div class="trace-detail">
+          <div class="detail-top"><span id="step-owner" class="owner-pill"></span><span id="step-phase" class="phase-label"></span></div>
+          <h3 id="step-title" aria-live="polite"></h3>
+          <p id="step-description" class="detail-copy"></p>
+          <div class="detail-grid">
+            <div><span class="detail-label">What goes in</span><p id="step-input"></p></div>
+            <div><span class="detail-label">What comes out</span><p id="step-output"></p></div>
+            <div><span class="detail-label">Why it matters</span><p id="step-why"></p></div>
+            <div><span class="detail-label">State after this step</span><p id="step-state"></p></div>
+          </div>
+          <div class="trace-controls">
+            <button type="button" id="prev-step">← Previous</button>
+            <button type="button" id="next-step" class="button primary">Next step →</button>
+            <button type="button" id="reset-step" class="text-button">Reset trace</button>
+          </div>
+          <p class="keyboard-hint">Tip: focus the timeline and use the arrow keys, or use the buttons.</p>
+        </div>
+      </div>
+      <div class="loop-summary">
+        <div><strong>Model proposes</strong><span>Plan, answer, or tool call</span></div>
+        <div><strong>Harness decides</strong><span>Validate, approve, dispatch, or stop</span></div>
+        <div><strong>Environment responds</strong><span>Tool result, error, or changed state</span></div>
+        <div><strong>Model adapts</strong><span>Use the new evidence in the next turn</span></div>
+      </div>
+    </section>
+
+    <section id="planning" class="section">
+      <div class="section-head">
+        <div class="eyebrow">05 / Planning & development</div>
+        <h2>A plan is working state, not a script</h2>
+        <p>The goal tells the agent what success means. A plan selects a route, but each observation can change it. The harness keeps the plan visible and bounded while the model revises it.</p>
+      </div>
+      <div class="planning-grid">
+        <div class="planning-column">
+          <h3>From request to next action</h3>
+          <ol class="planning-list">
+            <li><span>01</span><div><strong>Define the outcome</strong><p>“Find the likely cause of latency, cite evidence, and propose a safe mitigation.” Add what must not happen: no rollback without approval.</p></div></li>
+            <li><span>02</span><div><strong>Break it into checks</strong><p>Compare current latency to baseline, inspect error logs, correlate deploy timing, then verify the leading explanation.</p></div></li>
+            <li><span>03</span><div><strong>Choose the next observation</strong><p>Call the smallest read-only tool that reduces uncertainty. Start with metrics or logs before considering a write action.</p></div></li>
+            <li><span>04</span><div><strong>Revise from evidence</strong><p>If the logs contradict the deployment hypothesis, update the plan and investigate another cause. Do not follow stale steps blindly.</p></div></li>
+            <li><span>05</span><div><strong>Check the outcome</strong><p>Run a verification query, compare with the success criteria, and report what is known, unknown, and proposed.</p></div></li>
+          </ol>
+        </div>
+        <aside class="plan-example">
+          <div class="mini-label">Example plan state</div>
+          <h3>Investigate API latency</h3>
+          <div class="plan-row"><span class="status done">✓</span><div><strong>Establish baseline</strong><small>p95 rose from 210 ms to 900 ms at 14:06</small></div></div>
+          <div class="plan-row"><span class="status done">✓</span><div><strong>Inspect recent logs</strong><small>Timeouts cluster around database reads</small></div></div>
+          <div class="plan-row"><span class="status active">3</span><div><strong>Correlate deployment</strong><small>Query release metadata and changed code</small></div></div>
+          <div class="plan-row"><span class="status">4</span><div><strong>Verify & report</strong><small>Check another signal, then suggest mitigation</small></div></div>
+          <div class="plan-divider"></div>
+          <p><strong>Replanning trigger:</strong> a tool returns contrary evidence, a step fails, the goal changes, or the remaining budget is too small.</p>
+        </aside>
+      </div>
+      <div class="principle-grid">
+        <div class="principle"><strong>Model-owned judgment</strong><p>Hypotheses, decomposition, and what information to seek next can be generated by the model.</p></div>
+        <div class="principle"><strong>Code-owned boundaries</strong><p>Budgets, permissions, timeouts, approval rules, and required checks are enforced by the harness.</p></div>
+        <div class="principle"><strong>Shared state</strong><p>Store the current plan and evidence explicitly so a new model turn can continue coherently.</p></div>
+      </div>
+    </section>
+
+    <section id="tools" class="section">
+      <div class="section-head">
+        <div class="eyebrow">06 / Tool calling</div>
+        <h2>A tool call is a request, not an action</h2>
+        <p>The model emits a name and arguments. The harness must decide whether that request is valid and allowed before executing it. Results become new context for the next model turn.</p>
+      </div>
+      <div class="tool-flow" aria-label="Tool call lifecycle">
+        <div><span>01</span><strong>Advertise</strong><small>Offer names and input schemas</small></div>
+        <div><span>02</span><strong>Propose</strong><small>Model selects a tool and arguments</small></div>
+        <div><span>03</span><strong>Check</strong><small>Validate, authorize, approve</small></div>
+        <div><span>04</span><strong>Execute</strong><small>Call local code, API, or MCP server</small></div>
+        <div><span>05</span><strong>Observe</strong><small>Return result or structured error</small></div>
+        <div><span>06</span><strong>Continue</strong><small>Model interprets result or stops</small></div>
+      </div>
+      <div class="code-grid">
+        <div class="code-panel"><div class="code-caption">1 · Tool contract exposed to the model</div><pre><code>{
+  "name": "search_logs",
+  "description": "Read recent service logs",
+  "input": {
+    "service": "string",
+    "since_minutes": "integer"
+  }
+}</code></pre></div>
+        <div class="code-panel"><div class="code-caption">2 · Proposed call, then result</div><pre><code>model → {
+  "tool": "search_logs",
+  "arguments": {
+    "service": "api",
+    "since_minutes": 15
+  }
+}
+tool → { "timeouts": 42, "sample": "..." }</code></pre></div>
+      </div>
+      <div class="tool-decision">
+        <div>
+          <div class="mini-label">Interactive decision</div>
+          <h3>Which tool should run next?</h3>
+          <p>The logs show timeouts starting near a release. You want to know whether a deployment coincided with the spike. Pick a call and see how the harness treats it.</p>
+          <div class="choice-buttons" role="group" aria-label="Choose a tool">
+            <button type="button" data-tool-choice="logs" aria-pressed="false">search_logs</button>
+            <button type="button" data-tool-choice="deployments" aria-pressed="false">get_deployments</button>
+            <button type="button" data-tool-choice="rollback" aria-pressed="false">rollback_release</button>
+          </div>
+        </div>
+        <div class="choice-result" id="tool-result" role="status" aria-live="polite">
+          <span class="mini-label">Decision note</span>
+          <p>Choose a tool to inspect the reason and control path.</p>
+        </div>
+      </div>
+      <div class="callout"><strong>Where MCP fits:</strong> an MCP client can discover a server's tools and call one by name with arguments. It is a transport and interoperability layer in this path; the harness still owns policy, state, and the loop.</div>
+    </section>
+
+    <section id="completion" class="section">
+      <div class="section-head">
+        <div class="eyebrow">07 / Reaching the goal</div>
+        <h2>How does the harness know when to stop?</h2>
+        <p>It cannot guarantee that the model is correct. It can require observable evidence, check hard limits, and make the outcome explicit.</p>
+      </div>
+      <div class="outcome-grid">
+        <article class="outcome"><span class="outcome-icon">✓</span><h3>Completed</h3><p>The result meets the task's acceptance checks. Example: latency is explained by two independent signals, and the proposed mitigation is clearly separated from action taken.</p></article>
+        <article class="outcome"><span class="outcome-icon">⏸</span><h3>Waiting</h3><p>A necessary write operation needs approval, or the user must choose between materially different paths. The run saves a checkpoint and resumes later.</p></article>
+        <article class="outcome"><span class="outcome-icon">!</span><h3>Stopped with limits</h3><p>Time, step, cost, or retry budget is exhausted, or a tool fails. The agent reports partial findings and what remains unverified.</p></article>
+      </div>
+      <div class="completion-check">
+        <h3>Completion check for the incident</h3>
+        <ul>
+          <li>Has the agent identified the affected service and time window?</li>
+          <li>Is the explanation supported by logs, metrics, or release data rather than a guess?</li>
+          <li>Did it verify a plausible alternative or name the remaining uncertainty?</li>
+          <li>Are proposed actions separated from actions actually performed?</li>
+          <li>Did every side effect pass the policy and approval gate?</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="blueprint" class="section">
+      <div class="section-head">
+        <div class="eyebrow">08 / Build blueprint</div>
+        <h2>Build the smallest useful harness</h2>
+        <p>Start with one goal, a few typed tools, and a loop you can inspect. Add persistence, approvals, and more autonomy only when the task needs them.</p>
+      </div>
+      <div class="blueprint-grid">
+        <div class="code-panel large"><div class="code-caption">Minimal runner · illustrative pseudocode</div><pre><code>async function run(goal, tools, limits) {
+  const state = { goal, messages: [], steps: 0 };
+  while (state.steps &lt; limits.maxSteps) {
+    const input = buildContext(state, tools.schemas);
+    const reply = await model.generate(input);
+    record(reply);
+
+    if (reply.isFinal) {
+      return verifyAgainstGoal(reply, state);
+    }
+
+    for (const call of reply.toolCalls) {
+      const args = validate(call, tools.schemas);
+      await authorizeOrPause(call, args, state);
+      const result = await executeWithTimeout(call, args);
+      state.messages.push(toolResult(call.id, result));
+      record(result);
+    }
+    state.steps += 1;
+  }
+  return partialResult(state, "step budget reached");
+}</code></pre><p class="code-note">In a real implementation, handle model errors, missing tools, retries, cancellation, output checks, and checkpoint persistence explicitly.</p></div>
+        <div class="build-stages">
+          <div class="build-stage"><span>1</span><div><h3>Define the contract</h3><p>Specify the goal, allowed actions, acceptance checks, and what must be approved.</p></div></div>
+          <div class="build-stage"><span>2</span><div><h3>Choose the environment</h3><p>Map the workspace and decide whether tools need a sandbox, shell, or external service.</p></div></div>
+          <div class="build-stage"><span>3</span><div><h3>Implement read-only tools</h3><p>Give each tool a narrow schema, timeout, clear error shape, and bounded output.</p></div></div>
+          <div class="build-stage"><span>4</span><div><h3>Wire the runner</h3><p>Feed tool results back to the model and cap turns, time, and cost.</p></div></div>
+          <div class="build-stage"><span>5</span><div><h3>Add controlled writes</h3><p>Introduce authorization, approval, idempotency, and an audit trail before side effects.</p></div></div>
+          <div class="build-stage"><span>6</span><div><h3>Evaluate real tasks</h3><p>Test success and failure cases: wrong tool, malformed args, empty result, timeout, and premature “done.”</p></div></div>
+        </div>
+      </div>
+      <div class="comparison-wrap">
+        <h3>Common failure → harness response</h3>
+        <div class="table-scroll"><table>
+          <thead><tr><th>Failure</th><th>What the harness does</th></tr></thead>
+          <tbody>
+            <tr><td>Model invents a tool name</td><td>Reject or return a structured “tool unavailable” result; never execute an unknown operation.</td></tr>
+            <tr><td>Arguments fail the schema</td><td>Validate before dispatch and let the model correct the request, within the retry budget.</td></tr>
+            <tr><td>External API times out</td><td>Record the error, retry only when safe, or report incomplete evidence.</td></tr>
+            <tr><td>Model claims completion early</td><td>Run acceptance checks and ask for more evidence or return an incomplete outcome.</td></tr>
+            <tr><td>Task outlives one context window</td><td>Checkpoint plan and evidence; restore only the relevant state for the next turn.</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <section id="sources" class="section sources-section">
+      <div class="section-head">
+        <div class="eyebrow">Further reading</div>
+        <h2>Primary sources behind this guide</h2>
+        <p>The examples here are simplified teaching models. SDKs differ in exact control flow and policy hooks.</p>
+      </div>
+      <div class="source-list">
+        <a href="https://openai.github.io/openai-agents-python/running_agents/" target="_blank" rel="noopener noreferrer"><strong>OpenAI Agents SDK · Running agents</strong><span>Runner loop, tool calls, handoffs, and turn limits ↗</span></a>
+        <a href="https://openai.github.io/openai-agents-python/guardrails/" target="_blank" rel="noopener noreferrer"><strong>OpenAI Agents SDK · Guardrails</strong><span>Where checks run around inputs, outputs, and tools ↗</span></a>
+        <a href="https://ts.sdk.modelcontextprotocol.io/v2/clients/calling" target="_blank" rel="noopener noreferrer"><strong>MCP TypeScript SDK · Calling tools</strong><span>Tool discovery and call behavior ↗</span></a>
+        <a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener noreferrer"><strong>Anthropic · Building effective agents</strong><span>Practical patterns for agent systems ↗</span></a>
+        <a href="https://www.anthropic.com/research/effective-harnesses-for-long-running-agents" target="_blank" rel="noopener noreferrer"><strong>Anthropic · Effective harnesses</strong><span>Checkpoints and incremental progress in long tasks ↗</span></a>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="wrap"><span>AI/SYSTEMS · An engineer's field guide</span><a href="#top">Back to top ↑</a></div></footer>
+</body>
+</html>
