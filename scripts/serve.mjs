@@ -7,7 +7,9 @@ const files = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/index.html', ['index.html', 'text/html; charset=utf-8']],
   ['/styles.css', ['styles.css', 'text/css; charset=utf-8']],
-  ['/app.js', ['app.js', 'text/javascript; charset=utf-8']]
+  ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
+  ['/assets/agent-core.png', ['assets/agent-core.png', 'image/png']],
+  ['/assets/site-icon.png', ['assets/site-icon.png', 'image/png']]
 ]);
 createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;

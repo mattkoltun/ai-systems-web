@@ -32,6 +32,8 @@ Push a commit to the branch configured as Production Branch in Vercel to trigger
 - `index.html`: semantic page content.
 - `styles.css`: responsive styles.
 - `app.js`: interactive loop trace and tool-choice exercise.
+- `assets/agent-core.png`: optimized hero illustration.
+- `assets/site-icon.png`: browser tab and wordmark icon.
 - `scripts/build.mjs`: dependency-free build, copying static content to `dist`.
 - `scripts/serve.mjs`: local HTTP development/preview server.
 - `package.json`: npm scripts.

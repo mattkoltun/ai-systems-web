@@ -155,6 +155,7 @@ let steps = incidentSteps;
 const stepList = document.querySelector('#step-list');
 const fields = {
   count: document.querySelector('#step-count'),
+  progress: document.querySelector('#trace-progress-fill'),
   owner: document.querySelector('#step-owner'),
   phase: document.querySelector('#step-phase'),
   title: document.querySelector('#step-title'),
@@ -197,6 +198,7 @@ function renderStep(index) {
   currentStep = index;
   const step = steps[index];
   fields.count.textContent = `${index + 1} / ${steps.length}`;
+  fields.progress.style.width = `${((index + 1) / steps.length) * 100}%`;
   fields.owner.textContent = step.owner;
   fields.phase.textContent = step.phase;
   fields.title.textContent = step.title;
@@ -262,3 +264,21 @@ document.querySelectorAll('[data-tool-choice]').forEach(button => {
     result.append(label, heading, explanation, control);
   });
 });
+
+if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const revealTargets = document.querySelectorAll(
+    '.section-head, .concept-grid .card, .environment-grid .card, .architecture, .trace-layout, .planning-grid, .tool-flow, .outcome-grid, .blueprint-grid'
+  );
+  const revealObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      revealObserver.unobserve(entry.target);
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px 40px 0px' });
+  revealTargets.forEach((target, index) => {
+    target.classList.add('reveal-pending');
+    target.style.setProperty('--reveal-delay', `${(index % 3) * 80}ms`);
+    revealObserver.observe(target);
+  });
+}

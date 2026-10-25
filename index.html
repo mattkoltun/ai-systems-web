@@ -6,14 +6,28 @@
   <meta name="description" content="An engineer's field guide to agent loops, planning, tools, and the harness that turns model output into reliable work.">
   <meta name="theme-color" content="#0b1020">
   <title>AI Systems — The Agent Loop & Harness Field Guide</title>
+  <link rel="icon" type="image/png" href="./assets/site-icon.png">
+  <link rel="apple-touch-icon" href="./assets/site-icon.png">
   <link rel="stylesheet" href="./styles.css">
   <script src="./app.js" defer></script>
 </head>
 <body>
+  <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="icon-model" viewBox="0 0 24 24"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z"/><path d="M19 17l.7 2.3L22 20l-2.3.7L19 23l-.7-2.3L16 20l2.3-.7L19 17Z"/></symbol>
+    <symbol id="icon-tool" viewBox="0 0 24 24"><path d="M14.5 6.5a5 5 0 0 0-6 6L3 18a2 2 0 0 0 3 3l5.5-5.5a5 5 0 0 0 6-6L14 13l-3-3 3.5-3.5Z"/></symbol>
+    <symbol id="icon-mcp" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 12h6l4-6M13 12l4 6"/></symbol>
+    <symbol id="icon-skill" viewBox="0 0 24 24"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1ZM12 5v15"/><path d="M6 9h3M15 9h3"/></symbol>
+    <symbol id="icon-harness" viewBox="0 0 24 24"><path d="M12 2l8.5 5v10L12 22l-8.5-5V7L12 2Z"/><circle cx="12" cy="12" r="3"/><path d="M12 5v4M12 15v4M5 12h4M15 12h4"/></symbol>
+    <symbol id="icon-agent" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 8a9 9 0 0 1 14-3M20 16a9 9 0 0 1-14 3"/><path d="M19 2v4h-4M5 22v-4h4"/></symbol>
+    <symbol id="icon-workspace" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10H3V7Z"/><path d="M3 10h18"/></symbol>
+    <symbol id="icon-sandbox" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4Z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="icon-container" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7l9-5ZM3 7l9 5 9-5M12 12v10"/></symbol>
+    <symbol id="icon-shell" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 9l3 3-3 3M12 15h5"/></symbol>
+  </svg>
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header">
     <nav class="nav wrap" aria-label="Main navigation">
-      <a class="brand" href="#top" aria-label="AI Systems, back to top">AI<span>/</span>SYSTEMS</a>
+      <a class="brand" href="#top" aria-label="AI Systems, back to top"><img src="./assets/site-icon.png" width="29" height="29" alt=""><span class="brand-wordmark">AI<em>/</em>SYSTEMS</span></a>
       <div class="nav-links">
         <a href="#environment">Environment</a>
         <a href="#anatomy">Harness</a>
@@ -24,15 +38,24 @@
       </div>
     </nav>
     <div class="hero wrap" id="top">
-      <div class="eyebrow"><span class="signal"></span> Engineering field guide · 101 to implementation</div>
-      <h1>How an agent<br><em>gets work done.</em></h1>
-      <p class="hero-copy">A model proposes the next step. A harness turns it into a controlled cycle of planning, tool use, observation, and verification. Workspaces and sandboxes give that cycle a place to run. Follow the system from a user goal to a defensible result.</p>
-      <div class="hero-actions">
-        <a class="button primary" href="#loop">Explore the loop <span aria-hidden="true">↗</span></a>
-        <a class="button secondary" href="#blueprint">See the build blueprint</a>
+      <div class="hero-grid">
+        <div class="hero-content">
+          <div class="eyebrow"><span class="signal"></span> Engineering field guide · 101 to implementation</div>
+          <h1>How an agent<br><em>gets work done.</em></h1>
+          <p class="hero-copy">A model proposes the next step. A harness turns it into a controlled cycle of planning, tool use, observation, and verification. Workspaces and sandboxes give that cycle a place to run.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#loop">Explore the loop <span aria-hidden="true">↗</span></a>
+            <a class="button secondary" href="#blueprint">See the build blueprint</a>
+          </div>
+        </div>
+        <figure class="hero-visual">
+          <div class="hero-halo" aria-hidden="true"></div>
+          <img src="./assets/agent-core.png" width="1200" height="800" alt="Glowing central agent core connected to planning, tools, observation, and verification modules" fetchpriority="high">
+          <figcaption><span class="visual-pulse" aria-hidden="true"></span> One loop · many controlled systems</figcaption>
+        </figure>
       </div>
       <div class="hero-path" aria-label="Agent cycle">
-        <span>Goal</span><b aria-hidden="true">→</b><span>Plan</span><b aria-hidden="true">→</b><span>Act</span><b aria-hidden="true">→</b><span>Observe</span><b aria-hidden="true">→</b><span>Verify</span>
+        <span style="--i:0">Goal</span><b aria-hidden="true">→</b><span style="--i:1">Plan</span><b aria-hidden="true">→</b><span style="--i:2">Act</span><b aria-hidden="true">→</b><span style="--i:3">Observe</span><b aria-hidden="true">→</b><span style="--i:4">Verify</span>
       </div>
     </div>
   </header>
@@ -45,12 +68,12 @@
         <p>The words overlap in everyday conversation. Their boundaries matter when you design the system.</p>
       </div>
       <div class="concept-grid">
-        <article class="card"><div class="card-tag">Inference</div><h3>Model / LLM</h3><p>Produces text or structured tool requests from the context it receives. It predicts; it does not directly execute your code.</p></article>
-        <article class="card"><div class="card-tag">Capability</div><h3>Tool</h3><p>A callable operation with a name, input contract, implementation, and result. It can read data or change the world.</p></article>
-        <article class="card"><div class="card-tag">Protocol</div><h3>MCP</h3><p>One way to discover and call external tools, and access resources or prompts. The host still decides what is available and permitted.</p></article>
-        <article class="card"><div class="card-tag">Procedure</div><h3>Skill</h3><p>Reusable instructions and examples for a task. It shapes decisions; it is not the executor.</p></article>
-        <article class="card accent-card"><div class="card-tag">Runtime</div><h3>Harness</h3><p>The code that assembles context, runs the loop, dispatches tools, applies limits, stores state, and records what happened.</p></article>
-        <article class="card"><div class="card-tag">Behavior</div><h3>Agent</h3><p>The model working through a harness toward a goal, adjusting its next action from observations and feedback.</p></article>
+        <article class="card"><div class="card-top"><span class="icon-wrap"><svg><use href="#icon-model"/></svg></span><div class="card-tag">Inference</div></div><h3>Model / LLM</h3><p>Produces text or structured tool requests from the context it receives. It predicts; it does not directly execute your code.</p></article>
+        <article class="card"><div class="card-top"><span class="icon-wrap"><svg><use href="#icon-tool"/></svg></span><div class="card-tag">Capability</div></div><h3>Tool</h3><p>A callable operation with a name, input contract, implementation, and result. It can read data or change the world.</p></article>
+        <article class="card"><div class="card-top"><span class="icon-wrap"><svg><use href="#icon-mcp"/></svg></span><div class="card-tag">Protocol</div></div><h3>MCP</h3><p>One way to discover and call external tools, and access resources or prompts. The host still decides what is available and permitted.</p></article>
+        <article class="card"><div class="card-top"><span class="icon-wrap"><svg><use href="#icon-skill"/></svg></span><div class="card-tag">Procedure</div></div><h3>Skill</h3><p>Reusable instructions and examples for a task. It shapes decisions; it is not the executor.</p></article>
+        <article class="card accent-card"><div class="card-top"><span class="icon-wrap"><svg><use href="#icon-harness"/></svg></span><div class="card-tag">Runtime</div></div><h3>Harness</h3><p>The code that assembles context, runs the loop, dispatches tools, applies limits, stores state, and records what happened.</p></article>
+        <article class="card"><div class="card-top"><span class="icon-wrap"><svg><use href="#icon-agent"/></svg></span><div class="card-tag">Behavior</div></div><h3>Agent</h3><p>The model working through a harness toward a goal, adjusting its next action from observations and feedback.</p></article>
       </div>
       <div class="callout compact"><strong>One sentence:</strong> the model chooses a possible next move; the harness decides whether, when, and how that move becomes an action.</div>
     </section>
@@ -62,10 +85,10 @@
         <p>An agent can inspect a repository or run a command only when its tools have access to an execution environment. These four terms describe different parts of that environment.</p>
       </div>
       <div class="environment-grid">
-        <article class="card"><div class="card-tag">Durable scope</div><h3>Workspace</h3><p>The project context: repositories, files, settings, and task history. It usually lasts longer than one agent run.</p></article>
-        <article class="card"><div class="card-tag">Execution boundary</div><h3>Sandbox</h3><p>A constrained place for a task to read files, run programs, or edit code. It can restrict filesystem, network, CPU, and other resources.</p></article>
-        <article class="card"><div class="card-tag">Runtime package</div><h3>Container</h3><p>One possible way to package the processes, filesystem, and dependencies used by a sandbox. A sandbox can use other isolation methods.</p></article>
-        <article class="card"><div class="card-tag">Command interface</div><h3>Shell</h3><p>A command interpreter, such as bash or zsh, that starts processes inside the environment. A shell is one tool surface, not the whole sandbox.</p></article>
+        <article class="card"><div class="card-top"><span class="icon-wrap"><svg><use href="#icon-workspace"/></svg></span><div class="card-tag">Durable scope</div></div><h3>Workspace</h3><p>The project context: repositories, files, settings, and task history. It usually lasts longer than one agent run.</p></article>
+        <article class="card"><div class="card-top"><span class="icon-wrap"><svg><use href="#icon-sandbox"/></svg></span><div class="card-tag">Execution boundary</div></div><h3>Sandbox</h3><p>A constrained place for a task to read files, run programs, or edit code. It can restrict filesystem, network, CPU, and other resources.</p></article>
+        <article class="card"><div class="card-top"><span class="icon-wrap"><svg><use href="#icon-container"/></svg></span><div class="card-tag">Runtime package</div></div><h3>Container</h3><p>One possible way to package the processes, filesystem, and dependencies used by a sandbox. A sandbox can use other isolation methods.</p></article>
+        <article class="card"><div class="card-top"><span class="icon-wrap"><svg><use href="#icon-shell"/></svg></span><div class="card-tag">Command interface</div></div><h3>Shell</h3><p>A command interpreter, such as bash or zsh, that starts processes inside the environment. A shell is one tool surface, not the whole sandbox.</p></article>
       </div>
       <div class="environment-layout">
         <div class="containment-model">
@@ -133,6 +156,7 @@
       <div class="trace-layout">
         <div class="trace-rail">
           <div class="rail-title">Run timeline <span id="step-count">1 / 9</span></div>
+          <div class="trace-progress" aria-hidden="true"><span id="trace-progress-fill"></span></div>
           <ol id="step-list" class="step-list" aria-label="Agent loop steps"></ol>
         </div>
         <div class="trace-detail">
